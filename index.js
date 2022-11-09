@@ -1,7 +1,9 @@
 const express = require('express');
 const app = express();
 const bodyparser = require('body-parser');
+const socketIo = require("socket.io");
 const cors = require('cors');
+const http = require('http');
 
 require('dotenv').config();
 require('./models/init');
@@ -13,12 +15,28 @@ app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 app.use('/auth', authRoute);
 
+const server = http.createServer(app)
+const io = socketIo(server, {
+  cors: {
+    origin: "*"
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log("New client connected");
+  socket.emit("EstabConn", {lol: 'lol'})
+
+  socket.on("disconnect", () => {
+    console.log("Client Disconnected!")
+  })
+})
+
 app.get('*', (req, res) => {
   res.send('error 404');
 });
 
 PORT = process.env.PORT;
-app.listen(PORT, (err) => {
+server.listen(PORT, (err) => {
   if (err) {
     console.log(err);
   } else {
