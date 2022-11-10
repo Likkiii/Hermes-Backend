@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const bodyparser = require('body-parser');
-const socketIo = require("socket.io");
+const socketIo = require('socket.io');
 const cors = require('cors');
 const http = require('http');
 
@@ -15,21 +15,25 @@ app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 app.use('/auth', authRoute);
 
-const server = http.createServer(app)
+const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*"
-  }
+    origin: '*',
+  },
 });
 
-io.on("connection", (socket) => {
-  console.log("New client connected");
-  socket.emit("EstabConn", {lol: 'lol'})
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  socket.emit('EstabConn', { lol: 'lol' });
 
-  socket.on("disconnect", () => {
-    console.log("Client Disconnected!")
-  })
-})
+  socket.on('msg', (msg) => {
+    socket.broadcast.emit('msg', msg);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client Disconnected!');
+  });
+});
 
 app.get('*', (req, res) => {
   res.send('error 404');
