@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 router.get('/', (req, res) => {
   res.send('Auth route');
@@ -16,13 +17,16 @@ router.post('/register', async (req, res) => {
     const { username, password, email } = req.body;
     const data = await User.findOne({ username });
 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     if (data) {
       return res.json({ error: 'User already exists' });
     }
 
     const user = await User.create({
       username,
-      password,
+      password: hashedPassword,
       email,
     });
 
@@ -38,13 +42,20 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username;
+    const password = req.body.password;
+
+    if (username == '' || password == '') {
+      return res.json({ error: 'Please enter username and password' });
+    }
+
     const user = await User.findOne({
       username,
-      password,
     });
 
-    if (user) {
+    const match = await bcrypt.compare(password, user.password);
+
+    if (match) {
       const token = jwt.sign(
         { user: user.username, email: user.email },
         process.env.JWT

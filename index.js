@@ -9,6 +9,7 @@ require('dotenv').config();
 require('./models/init');
 
 const authRoute = require('./routes/auth');
+const { group } = require('console');
 
 app.use(cors());
 app.use(bodyparser.urlencoded({ extended: false }));
@@ -26,8 +27,19 @@ io.on('connection', (socket) => {
   console.log('New client connected');
   socket.emit('EstabConn', { lol: 'lol' });
 
+  socket.on('join', (group) => {
+    let rooml = [...socket.rooms];
+    if (rooml[1] != undefined) socket.leave(rooml[1]);
+    socket.join(group);
+  });
+
   socket.on('msg', (msg) => {
-    socket.broadcast.emit('msg', msg);
+    let rooml = [...socket.rooms];
+    console.log(rooml);
+    if (rooml[1] != undefined) socket.to(rooml[1]).emit('msg', msg);
+    else {
+      socket.emit('status', 'No group joined');
+    }
   });
 
   socket.on('disconnect', () => {
